@@ -9,9 +9,13 @@ router.post('/users', async (req, res) => {
         if (Object.keys(req.body).length === 0) {
             throw new Error('No data are inserted')
         }
+        const {error} = await User.checkEmailValidity(req.body.email)
+        if (error) {
+            throw new Error(error)
+        }
         const createdUser = await User.create(req.body)
-        await User.save()
-        res.status(201).send(createdUser)
+        const token = await createdUser.generateAuthToken()
+        res.status(201).send({ createdUser, token })
     } catch (error) {
         res.status(400).send({error: error.message})
     }
