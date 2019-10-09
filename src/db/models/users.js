@@ -3,8 +3,7 @@ const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-const Schema = mongoose.Schema;
-
+var Schema = mongoose.Schema;
 const userSchema = new Schema({
     userName: {
         type: String,
@@ -36,9 +35,7 @@ const userSchema = new Schema({
     password: {
         type: String,
         required: true,
-        trim: true,
-        minlength: 8,
-        lowercase: true
+        trim: true
     },
     phone: {
         type: String,
@@ -68,29 +65,37 @@ userSchema.methods.toJSON = function () {
 userSchema.statics.checkEmailValidity = async function (email) {
     const existingUser = await this.findOne({ email })
     if (existingUser) {
-        return { error: 'Email is already taken' }
+        throw new Error('Email is already registered')
     }
-    return{};
+    return;
 }
 
 //Generating Authentication tokens for users.
 userSchema.methods.generateAuthToken = async function () {
-    const token = jwt.sign({_id: this._id.toString()}, process.env.JWT_SECRET_KEY)
+    const token = jwt.sign({_id: this._id.toString(), exp: Math.floor(Date.now() / 1000) + 86400}, process.env.JWT_SECRET_KEY)
     this.tokens.push({ token })
     await this.save()
-
     return token
 }
 
-//Finding User by Credentials
+//Finding User by Credentials.
 userSchema.statics.findByCredentials = async function (email, password) {
-    const user = await User.findOne({})
+    const user = await this.findOne({ email })
+    if (!user) {
+        throw new Error('Unable to login')
+    }
+    let isMatch = await bcrypt.compare(password, user.password)
+    if (isMatch === false) {
+        throw new Error('Unable to login')
+    }
+    return user;
 }
 
 //Hashing user password before saving.
 userSchema.pre('save', async function (next) {
-    if (this.isModified('password')) {
-        this.password = await bcrypt.hash(this.password, 8)
+    const user = this
+    if (user.isModified('password') || user.isNew) {
+        user.password = await bcrypt.hash(user.password, 9)
     }
     next()
 })
