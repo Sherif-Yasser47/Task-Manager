@@ -35,7 +35,8 @@ const userSchema = new Schema({
     password: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
+        minlength: 8
     },
     phone: {
         type: String,
@@ -57,6 +58,7 @@ userSchema.methods.toJSON = function () {
     const user = this.toObject()
     delete user.password
     delete user.tokens
+    delete user.profilepic
 
     return user;
 }
@@ -72,7 +74,7 @@ userSchema.statics.checkEmailValidity = async function (email) {
 
 //Generating Authentication tokens for users.
 userSchema.methods.generateAuthToken = async function () {
-    const token = jwt.sign({_id: this._id.toString(), exp: Math.floor(Date.now() / 1000) + 86400}, process.env.JWT_SECRET_KEY)
+    const token = jwt.sign({_id: this._id.toString(), exp: Math.floor(Date.now() / 1000) + (86400 * 90)}, process.env.JWT_SECRET_KEY)
     this.tokens.push({ token })
     await this.save()
     return token
