@@ -93,6 +93,30 @@ router.get('/users/profile', auth, (req, res) => {
     }
 })
 
+//Update user End-Point.
+router.patch('/users/update', auth, async (req, res) => {
+    let allowedUpdates = ['userName', 'age', 'email', 'password', 'phone']
+    let userUpdates = Object.keys(req.body)
+    try {
+        if (userUpdates.length === 0) {
+            return res.status(400).send({ error: 'No update(s) are provided' })
+        }
+        let isAllowedUpdate = userUpdates.every((update) => allowedUpdates.includes(update))
+        if (isAllowedUpdate === false){
+            throw new Error('one or more fields are not existed to update')
+        }else if (req.body.email) {
+            await User.checkEmailValidity(req.body.email)
+        }
+        userUpdates.forEach((update) => {
+            req.user[update] = req.body[update]
+        })
+        await req.user.save()
+        res.send({ message: 'Updated successfuly', updatedUser: req.user })
+    } catch (error) {
+        res.status(406).send({ error: error.message })
+    }
+})
+
 //Deleting User profile pic.
 router.delete('/users/pp', auth, async (req, res) => {
     if (req.user.profilepic === null || undefined) {
