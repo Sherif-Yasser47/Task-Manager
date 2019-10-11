@@ -54,6 +54,12 @@ const userSchema = new Schema({
     timestamps: true
 })
 
+userSchema.virtual('tasks', {
+    ref: 'Task',
+    localField: '_id',
+    foreignField: 'userID'
+})
+
 userSchema.methods.toJSON = function () {
     const user = this.toObject()
     delete user.password
