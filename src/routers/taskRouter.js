@@ -27,6 +27,36 @@ router.post('/tasks', auth, async (req, res) => {
     }
 })
 
+//User upload profile pic End-Point.
+const upload = multer({
+    limits: {
+        fileSize: 5000000
+    },
+    fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(jpg|jpeg|png)$/i)) {
+            cb(new Error('Invalid file type'))
+        }
+        cb(undefined, true)
+    }
+})
+router.post('/tasks/img/:id', auth, upload.single('image'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).send({ error: 'No image selected' })
+    }
+    const task = await Task.findOne({ _id: req.params.id, userID: req.user._id })
+    if (!task) {
+        return res.status(404).send({ error: 'No task found' })
+    }
+    const imgbuffer = req.file.buffer
+    const output = await sharp(imgbuffer).png().resize(200, 200).toBuffer()
+    task.img = output
+    await task.save()
+    res.set('Content-Type', 'image/png')
+    res.send(task.img)
+}, (error, req, res, next) => {
+    res.status(400).send({ error: error.message })
+})
+
 //Reading multiple tasks End-Point.
 router.get('/tasks', auth, async (req, res) => {
     try {
@@ -74,6 +104,23 @@ router.patch('/tasks/:id', auth, async (req, res) => {
         })
         await task.save()
         res.send(task)
+    } catch (error) {
+        res.status(404).send({ error: error.message })
+    }
+})
+
+//delete Task img End-Point.
+router.delete('/tasks/img/:id', auth, async (req, res) => {
+    try {
+        const task = await Task.findOne({ _id: req.params.id, userID: req.user._id })
+        if (!task) {
+            throw new Error('No task found')
+        }else if (task.img === null || undefined) {
+            throw new Error('No image to be deleted')
+        }
+        task.img = null
+        await task.save()
+        res.send({ message: 'Task image is deleted successfuly' })
     } catch (error) {
         res.status(404).send({ error: error.message })
     }
