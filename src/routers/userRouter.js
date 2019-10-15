@@ -3,6 +3,7 @@ const User = require('../db/models/users')
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const sharp = require('sharp');
+const Task = require('../db/models/tasks');
 
 const router = express.Router();
 
@@ -93,6 +94,17 @@ router.get('/users/profile', auth, (req, res) => {
     }
 })
 
+//Read multiple users End-Point.
+router.get('/users/all', async (req, res) => {
+    try {
+        const users = await User.find()
+        res.send(users)
+    } catch (error) {
+        res.status(500).send({ error: error.message })
+        console.log(error);
+    }
+})
+
 //Update user End-Point.
 router.patch('/users/update', auth, async (req, res) => {
     let allowedUpdates = ['userName', 'age', 'email', 'password', 'phone']
@@ -114,6 +126,21 @@ router.patch('/users/update', auth, async (req, res) => {
         res.send({ message: 'Updated successfuly', updatedUser: req.user })
     } catch (error) {
         res.status(406).send({ error: error.message })
+    }
+})
+
+//Deleting user End-Point.
+router.delete('/users/:id', async (req, res) => {
+    var _id = req.params.id
+    try {
+        const user = await User.findByIdAndDelete(_id)
+        if (!user) {
+            return res.status(404).send({ message: 'No user found by this ID' })
+        }
+        await Task.deleteMany({ userID: user._id })
+        res.send({ message: 'deleted successfuly', deletedUser: user })
+    } catch (error) {
+        res.status(400).send({ error: error.message })
     }
 })
 

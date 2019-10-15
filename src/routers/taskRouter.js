@@ -60,11 +60,11 @@ router.post('/tasks/img/:id', auth, upload.single('image'), async (req, res) => 
 //Reading multiple tasks End-Point.
 router.get('/tasks', auth, async (req, res) => {
     try {
-        const tasks = await Task.find({ userID: req.user._id })
-        if (!tasks.length) {
+        await req.user.populate('tasks').execPopulate()
+        if (!req.user.tasks.length) {
             return res.status(404).send({ error: 'No tasks found' })
         }
-        res.send(tasks)
+        res.send(req.user.tasks)
     } catch (error) {
         res.status(400).send({ error: error.message })
     }
@@ -109,13 +109,27 @@ router.patch('/tasks/:id', auth, async (req, res) => {
     }
 })
 
+//Deleting Task End-Point.
+router.delete('/tasks/:id', auth, async (req, res) => {
+    try {
+        var _id = req.params.id
+        const task = await Task.findOneAndDelete({ _id, userID: req.user._id  })
+        if (!task) {
+            return res.status(404).send({ message: 'No task found by this ID' })
+        }
+        res.send({ message: 'deleted successfuly', deletedTask: task })
+    } catch (error) {
+        res.status(400).send({ error: error.message })
+    }
+})
+
 //delete Task img End-Point.
 router.delete('/tasks/img/:id', auth, async (req, res) => {
     try {
         const task = await Task.findOne({ _id: req.params.id, userID: req.user._id })
         if (!task) {
             throw new Error('No task found')
-        }else if (task.img === null || undefined) {
+        } else if (task.img === null || undefined) {
             throw new Error('No image to be deleted')
         }
         task.img = null
