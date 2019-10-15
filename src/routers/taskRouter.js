@@ -59,8 +59,19 @@ router.post('/tasks/img/:id', auth, upload.single('image'), async (req, res) => 
 
 //Reading multiple tasks End-Point.
 router.get('/tasks', auth, async (req, res) => {
+    var match = {};
     try {
-        await req.user.populate('tasks').execPopulate()
+        if (req.query.completed) {
+           match.completed = req.query.completed === 'true'
+        }
+        await req.user.populate({ 
+            path: 'tasks',
+            match,
+            options: { 
+                limit:parseInt(req.query.limit),
+                skip: parseInt(req.query.skip) 
+            }
+        }).execPopulate()
         if (!req.user.tasks.length) {
             return res.status(404).send({ error: 'No tasks found' })
         }
