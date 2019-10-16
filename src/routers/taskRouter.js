@@ -17,9 +17,12 @@ router.post('/tasks', auth, async (req, res) => {
         let arr = [...req.body];
         arr.forEach((task) => {
             task.userID = req.user._id,
-                task.userName = req.user.userName
+            task.userName = req.user.userName
         })
         createdTask = await Task.insertMany(arr)
+        let tasksNumber = arr.length
+        req.user.tasksNo +=  tasksNumber
+        await req.user.save()
         res.status(201).send(createdTask)
     }
     catch (error) {
@@ -57,19 +60,24 @@ router.post('/tasks/img/:id', auth, upload.single('image'), async (req, res) => 
     res.status(400).send({ error: error.message })
 })
 
-//Reading multiple tasks End-Point.
 router.get('/tasks', auth, async (req, res) => {
     var match = {};
+    var sort = {};
     try {
         if (req.query.completed) {
            match.completed = req.query.completed === 'true'
+        }
+        if (req.query.sortBy) {
+            var sortOrder = req.query.sortBy.split(':')[1]
+            sort.createdAt = (sortOrder === 'asc') ? 1 : -1
         }
         await req.user.populate({ 
             path: 'tasks',
             match,
             options: { 
                 limit:parseInt(req.query.limit),
-                skip: parseInt(req.query.skip) 
+                skip: parseInt(req.query.skip) ,
+                sort
             }
         }).execPopulate()
         if (!req.user.tasks.length) {
@@ -128,6 +136,8 @@ router.delete('/tasks/:id', auth, async (req, res) => {
         if (!task) {
             return res.status(404).send({ message: 'No task found by this ID' })
         }
+        req.user.tasksNo -= 1
+        await req.user.save()
         res.send({ message: 'deleted successfuly', deletedTask: task })
     } catch (error) {
         res.status(400).send({ error: error.message })

@@ -41,6 +41,11 @@ const userSchema = new Schema({
     phone: {
         type: String,
     },
+    tasksNo: {
+        type: Number,
+        required: true,
+        default: 0
+    },
     tokens: [{
         token: {
             type: String,

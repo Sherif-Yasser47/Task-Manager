@@ -96,8 +96,21 @@ router.get('/users/profile', auth, (req, res) => {
 
 //Read multiple users End-Point.
 router.get('/users/all', async (req, res) => {
+    var sortBy = req.query.sortBy
+    var sortOrder = sortBy.split(':')[1]
     try {
-        const users = await User.find()
+        var sort = {};
+        if (sortBy.includes('createdAt:')) {
+            sort.createdAt = (sortOrder === 'asc') ? 1 : -1
+        }
+        if (sortBy.includes('age:')) {
+            console.log(sortBy);
+            sort.age = (sortOrder === 'asc') ? 1 : -1
+        }
+        const users = await User.find({},[], { sort,
+            limit:parseInt(req.query.limit),
+            skip: parseInt(req.query.skip)
+        })
         res.send(users)
     } catch (error) {
         res.status(500).send({ error: error.message })
