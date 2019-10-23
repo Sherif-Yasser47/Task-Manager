@@ -17,6 +17,9 @@ const TaskSchema = new Schema({
         type: Boolean,
         required: true
     },
+    dueDate: {
+        type: Date
+    },
     userName: {
         type: String,
         required: true,

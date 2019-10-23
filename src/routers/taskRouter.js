@@ -10,18 +10,16 @@ const router = express.Router();
 //Creating tasks End-Point.
 router.post('/tasks', auth, async (req, res) => {
     try {
-        var createdTask;
         if (Object.keys(req.body).length === 0) {
             throw new Error('No data are inserted')
         }
-        let arr = [...req.body];
-        arr.forEach((task) => {
-            task.userID = req.user._id,
-            task.userName = req.user.userName
+
+        const createdTask = await Task.create({
+            ...req.body,
+            userID: req.user._id,
+            userName: req.user.userName
         })
-        createdTask = await Task.insertMany(arr)
-        let tasksNumber = arr.length
-        req.user.tasksNo +=  tasksNumber
+        req.user.tasksNo += 1
         await req.user.save()
         res.status(201).send(createdTask)
     }
@@ -65,18 +63,18 @@ router.get('/tasks', auth, async (req, res) => {
     var sort = {};
     try {
         if (req.query.completed) {
-           match.completed = req.query.completed === 'true'
+            match.completed = req.query.completed === 'true'
         }
         if (req.query.sortBy) {
             var sortOrder = req.query.sortBy.split(':')[1]
             sort.createdAt = (sortOrder === 'asc') ? 1 : -1
         }
-        await req.user.populate({ 
+        await req.user.populate({
             path: 'tasks',
             match,
-            options: { 
-                limit:parseInt(req.query.limit),
-                skip: parseInt(req.query.skip) ,
+            options: {
+                limit: parseInt(req.query.limit),
+                skip: parseInt(req.query.skip),
                 sort
             }
         }).execPopulate()
@@ -132,7 +130,7 @@ router.patch('/tasks/:id', auth, async (req, res) => {
 router.delete('/tasks/:id', auth, async (req, res) => {
     try {
         var _id = req.params.id
-        const task = await Task.findOneAndDelete({ _id, userID: req.user._id  })
+        const task = await Task.findOneAndDelete({ _id, userID: req.user._id })
         if (!task) {
             return res.status(404).send({ message: 'No task found by this ID' })
         }
