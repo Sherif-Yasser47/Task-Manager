@@ -13,6 +13,15 @@ const TaskSchema = new Schema({
             }
         }
     },
+    listID: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'List'
+    },
+    listName: {
+        type: String,
+        required: true,
+    },
     completed: {
         type: Boolean,
         required: true
@@ -33,10 +42,15 @@ const TaskSchema = new Schema({
     img: {
         type: Buffer
     },
-},{
+}, {
     timestamps: true
 })
 
+TaskSchema.virtual('list', {
+    ref: 'List',
+    localField: 'listName',
+    foreignField: 'name'
+})
 const Task = mongoose.model('Task', TaskSchema)
 
 module.exports = Task;

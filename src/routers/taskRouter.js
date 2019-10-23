@@ -1,6 +1,6 @@
 const express = require('express');
 const Task = require('../db/models/tasks');
-const User = require('../db/models/users')
+const List = require('../db/models/lists')
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const sharp = require('sharp');
@@ -13,11 +13,15 @@ router.post('/tasks', auth, async (req, res) => {
         if (Object.keys(req.body).length === 0) {
             throw new Error('No data are inserted')
         }
-
+        var list = await List.findOne({ name: req.body.listName, userID: req.user._id })
+        if (!list) {
+            throw new Error('list is not existed')
+        }
         const createdTask = await Task.create({
             ...req.body,
             userID: req.user._id,
-            userName: req.user.userName
+            userName: req.user.userName,
+            listID: list._id
         })
         req.user.tasksNo += 1
         await req.user.save()
