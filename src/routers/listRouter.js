@@ -23,4 +23,22 @@ router.post('/lists', auth, async (req, res) => {
     }
 })
 
+//Reading list by name End-Point.
+router.get('/lists/:name', auth, async (req, res) => {
+    try {
+        const list = await List.findOne({ name: req.params.name, userID: req.user._id })
+        if (!list) {
+            throw new Error('list is not existed for user')
+        }
+        await list.populate({
+            path: 'tasks',
+            select: 'description completed'
+        }).execPopulate()
+        res.send({ list, listTasks: list.tasks })
+    } catch (error) {
+        res.status(404).send({ error: error.message })
+        console.log(error);
+    }
+})
+
 module.exports = router;

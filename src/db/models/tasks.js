@@ -46,11 +46,6 @@ const TaskSchema = new Schema({
     timestamps: true
 })
 
-TaskSchema.virtual('list', {
-    ref: 'List',
-    localField: 'listName',
-    foreignField: 'name'
-})
 const Task = mongoose.model('Task', TaskSchema)
 
 module.exports = Task;

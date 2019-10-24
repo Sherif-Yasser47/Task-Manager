@@ -27,7 +27,14 @@ const listSchema = new Schema({
         ref: 'User'
     },
 },{
-    timestamps: true
+    timestamps: true,
+    // toJSON: { virtuals: true }
+})
+
+listSchema.virtual('tasks', {
+    ref: 'Task',
+    localField: '_id',
+    foreignField: 'listID'
 })
 
 listSchema.statics.checkDuplicateList = async function (name) {
