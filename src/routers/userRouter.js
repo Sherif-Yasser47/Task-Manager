@@ -4,6 +4,7 @@ const auth = require('../middleware/auth');
 const multer = require('multer');
 const sharp = require('sharp');
 const Task = require('../db/models/tasks');
+const List = require('../db/models/lists');
 const {sendWelcomeEmail} = require('../emails/emails')
 
 const router = express.Router();
@@ -153,6 +154,7 @@ router.delete('/users/:id', async (req, res) => {
             return res.status(404).send({ message: 'No user found by this ID' })
         }
         await Task.deleteMany({ userID: user._id })
+        await List.deleteMany({ userID: user._id })
         res.send({ message: 'deleted successfuly', deletedUser: user })
     } catch (error) {
         res.status(400).send({ error: error.message })

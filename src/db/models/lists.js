@@ -28,22 +28,13 @@ const listSchema = new Schema({
     },
 },{
     timestamps: true,
-    // toJSON: { virtuals: true }
 })
 
 listSchema.virtual('tasks', {
     ref: 'Task',
     localField: '_id',
-    foreignField: 'listID'
+    foreignField: 'listID',
 })
-
-listSchema.statics.checkDuplicateList = async function (name) {
-    const existingList = await this.findOne({ name })
-    if (existingList) {
-        throw new Error('List Name is already taken')
-    }
-    return;
-}
 
 const List = mongoose.model('List', listSchema)
 
