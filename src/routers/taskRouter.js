@@ -62,6 +62,35 @@ router.post('/tasks/img/:id', auth, upload.single('image'), async (req, res) => 
     res.status(400).send({ error: error.message })
 })
 
+//Uploading files to task.
+var fileUpload = multer({
+    limits: {
+        fileSize: 5000000
+    },
+    fileFilter(req, file, cb) {
+        if (!file.originalname.match(/\.(pdf|docx|doc|txt)$/i)) {
+            cb(new Error('Invalid file type'))
+        }
+        cb(undefined, true)
+    }
+})
+router.post('/tasks/upload/:id', auth, fileUpload.single('file'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).send({ error: 'No file selected' })
+    }
+    const task = await Task.findOne({ _id: req.params.id, userID: req.user._id })
+    if (!task) {
+        return res.status(404).send({ error: 'No task found' })
+    }
+    const fileBuffer = req.file.buffer
+    task.uploads.push(fileBuffer)
+    await task.save()
+    res.set('Content-Type', req.file.mimetype)
+    res.send(task.uploads)
+}, (error, req, res, next) => {
+    res.status(400).send({ error: error.message })
+})
+
 router.get('/tasks', auth, async (req, res) => {
     var match = {};
     var sort = {};

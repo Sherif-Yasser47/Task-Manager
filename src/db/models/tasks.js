@@ -42,6 +42,11 @@ const TaskSchema = new Schema({
     img: {
         type: Buffer
     },
+    uploads: [{
+        upload: {
+            type: Buffer
+        }
+    }]
 }, {
     timestamps: true
 })

@@ -100,10 +100,10 @@ router.get('/users/profile', auth, (req, res) => {
 //Read multiple users End-Point.
 router.get('/users/all', async (req, res) => {
     var sortBy = req.query.sortBy
-    var sortOrder = sortBy.split(':')[1]
     try {
         var sort = {};
         if (sortBy && sortBy.includes('createdAt:')) {
+            var sortOrder = sortBy.split(':')[1]
             sort.createdAt = (sortOrder === 'asc') ? 1 : -1
         }
         if (sortBy.includes('age:')) {

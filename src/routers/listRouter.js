@@ -57,8 +57,7 @@ router.get('/lists', auth, async (req, res) => {
             throw new Error('list is not existed for user')
         }
         await list.populate({
-            path: 'tasks',
-            select: 'description'
+            path: 'tasks'
         }).execPopulate()
         res.send({ list, tasksNo: list.tasks.length })
     } catch (error) {
