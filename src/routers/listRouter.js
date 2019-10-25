@@ -11,6 +11,7 @@ router.post('/lists', auth, async (req, res) => {
         if (Object.keys(req.body).length === 0) {
             throw new Error('No data are inserted')
         }
+        await List.checkDuplicateName(req.body.name, req.user._id)
         const createdList = await List.create({
             ...req.body,
             userName: req.user.userName,
@@ -19,6 +20,29 @@ router.post('/lists', auth, async (req, res) => {
         res.status(201).send({ createdList })
     } catch (error) {
         res.status(400).send({ error: error.message })
+    }
+})
+
+//Reading all user lists.
+router.get('/lists/all', auth, async (req, res) => {
+    var sort = {};
+    var sortBy = req.query.sortBy
+    try {
+        if (sortBy && sortBy.includes('createdAt:')) {
+            var sortOrder = sortBy.split(':')[1]
+            sort.createdAt = (sortOrder === 'asc') ? 1 : -1
+        }
+        const lists = await List.find({ userID: req.user._id }, [], {
+            sort,
+            limit: parseInt(req.query.limit),
+            skip: parseInt(req.query.skip)
+        })
+        if (!lists.length) {
+            throw new Error('No lists found')
+        }
+        res.send(lists)
+    } catch (error) {
+        res.status(404).send({ error: error.message })
     }
 })
 
@@ -47,7 +71,7 @@ router.get('/lists/tasks', auth, async (req, res) => {
     if (!req.query.name) {
         return res.status(400).send({ error: 'no list name provided in qs' })
     }
-    var match = {}
+    var match = {};
     try {
         if (req.query.completed) {
             match.completed = req.query.completed === 'true'
@@ -67,8 +91,37 @@ router.get('/lists/tasks', auth, async (req, res) => {
     }
 })
 
+//Updating list.
+router.patch('/lists/:id', auth,async (req, res) => {
+    if (!req.params.id) {
+        return res.status(400).send({ error: 'no list id provided in url params' })
+    }
+    var userUpdates = Object.keys(req.body)
+    if (userUpdates.length === 0) {
+        return res.status(400).send({ error: 'No update(s) are provided' })
+    }
+    let notAllowedUpdate = userUpdates.find((update) => {
+        return update !== 'name'
+    })
+    if (notAllowedUpdate) {
+        return res.status(400).send({ error: 'one or more fields are not existed to update' })
+    }
+    try {
+        const list = await List.findById(req.params.id)
+        if (!list) {
+            throw new Error('No list found')
+        }
+        await List.checkDuplicateName(req.body.name, req.user._id)
+        list.name = req.body.name
+        await list.save()
+        res.send({ message: 'Updated successfully', list})
+    } catch (error) {
+        res.status(404).send({ error: error.message })
+    }
+})
+
 //Deleting list End-Point.
-router.delete('/lists/:id',auth, async (req, res) => {
+router.delete('/lists/:id', auth, async (req, res) => {
     if (!req.params.id) {
         return res.status(400).send({ error: 'No list id is provided' })
     }

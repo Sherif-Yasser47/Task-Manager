@@ -36,6 +36,14 @@ listSchema.virtual('tasks', {
     foreignField: 'listID',
 })
 
+listSchema.statics.checkDuplicateName = async function (name, userID) {
+    const list = await this.findOne({ name, userID })
+    if (list) {
+        throw new Error('list name is already taken')
+    }
+    return;
+}
+
 const List = mongoose.model('List', listSchema)
 
 module.exports = List;

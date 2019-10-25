@@ -111,7 +111,7 @@ router.patch('/tasks/:id', auth, async (req, res) => {
     if (userUpdates.length === 0) {
         return res.status(400).send({ error: 'No update(s) are provided' })
     }
-    let isAllowedUpdate = allowedUpdates.every((update) => allowedUpdates.includes(update))
+    let isAllowedUpdate = userUpdates.every((update) => allowedUpdates.includes(update))
     if (isAllowedUpdate === false) {
         return res.status(404).send({ error: 'one or more fields are not existed to update' })
     }

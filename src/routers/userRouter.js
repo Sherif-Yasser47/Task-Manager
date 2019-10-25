@@ -103,7 +103,7 @@ router.get('/users/all', async (req, res) => {
     var sortOrder = sortBy.split(':')[1]
     try {
         var sort = {};
-        if (sortBy.includes('createdAt:')) {
+        if (sortBy && sortBy.includes('createdAt:')) {
             sort.createdAt = (sortOrder === 'asc') ? 1 : -1
         }
         if (sortBy.includes('age:')) {
