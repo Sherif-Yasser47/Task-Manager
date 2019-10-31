@@ -4,6 +4,7 @@ const List = require('../db/models/lists')
 const auth = require('../middleware/auth');
 const multer = require('multer');
 const sharp = require('sharp');
+const path = require('path');
 
 const router = express.Router();
 
@@ -64,6 +65,7 @@ router.post('/tasks/img/:id', auth, upload.single('image'), async (req, res) => 
 
 //Uploading files to task.
 var fileUpload = multer({
+    dest: 'uploads',
     limits: {
         fileSize: 5000000
     },
@@ -75,22 +77,24 @@ var fileUpload = multer({
     }
 })
 router.post('/tasks/upload/:id', auth, fileUpload.single('file'), async (req, res) => {
+    if (!req.params.id) {
+        return res.status(400).send({ error: 'No task id provided' })
+    }
     if (!req.file) {
         return res.status(400).send({ error: 'No file selected' })
     }
-    const task = await Task.findOne({ _id: req.params.id, userID: req.user._id })
+    const task = await Task.findOne({_id: req.params.id, userID: req.user._id})
     if (!task) {
         return res.status(404).send({ error: 'No task found' })
     }
-    const fileBuffer = req.file.buffer
-    task.uploads.push(fileBuffer)
+    task.uploads.push(req.file)
     await task.save()
-    res.set('Content-Type', req.file.mimetype)
-    res.send(task.uploads)
+    res.send({ message: 'Uploaded successfuly', file: req.file })
 }, (error, req, res, next) => {
     res.status(400).send({ error: error.message })
 })
 
+//Get all user tasks.
 router.get('/tasks', auth, async (req, res) => {
     var match = {};
     var sort = {};
@@ -130,6 +134,46 @@ router.get('/tasks/:id', auth, async (req, res) => {
         res.send(task)
     } catch (error) {
         res.status(500).send({ error: error.message })
+    }
+})
+
+router.get('/tasks/img/:id', auth, async (req, res) => {
+    try {
+        const task = await Task.findOne({ _id: req.params.id, userID: req.user._id })
+        if (!task) {
+            throw new Error('No task found')
+        } else if (task.img === undefined || null) {
+            throw new Error('No image found for this task')
+        }
+        res.set('Content-Type', 'image/png')
+        res.send(task.img)
+    } catch (error) {
+        res.status(404).send(error.message)
+    }
+})
+
+//Get task specified uploaded file.
+router.get('/tasks/upload/:id', auth, async (req, res) => {
+    if (!req.params.id || !req.query.fileName) {
+        return res.status(400).send({ error: 'No task id or file name are provided' })
+    }
+    try {
+        const task = await Task.findOne({_id: req.params.id, userID: req.user._id})
+        if (!task) {
+            throw new Error('No task found')
+        }
+        let desiredFile = task.uploads.find((upload) => {
+            return upload.filename === req.query.fileName
+        })
+        if (!desiredFile) {
+            throw new Error('No file found')
+        }
+        let filePath = path.join(__dirname, `../../uploads/${desiredFile.filename}`)
+        res.set('Content-Type', desiredFile.mimetype)
+        res.sendFile(filePath)
+    } catch (error) {
+        res.status(404).send({ error: error.message })
+        console.log(error);
     }
 })
 
