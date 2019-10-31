@@ -106,7 +106,7 @@ router.patch('/lists/:id', auth,async (req, res) => {
         return res.status(400).send({ error: 'one or more fields are not existed to update' })
     }
     try {
-        const list = await List.findById(req.params.id)
+        const list = await List.findOne({ _id:req.params.id, userID: req.user._id })
         if (!list) {
             throw new Error('No list found')
         }
