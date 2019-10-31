@@ -121,6 +121,19 @@ router.get('/users/all', async (req, res) => {
     }
 })
 
+//Reading user profile pic.
+router.get('/users/pp', auth, async (req, res) => {
+    try {
+    if (!req.user.profilepic || req.user.profilepic === null ) {
+        throw new Error('No profilepic found')
+    }
+    res.set('Content-Type', 'image/png')
+    res.send(req.user.profilepic)
+    } catch (error) {
+        res.status(404).send({ error: error.message })
+    }
+})
+
 //Update user End-Point.
 router.patch('/users/update', auth, async (req, res) => {
     let allowedUpdates = ['userName', 'age', 'email', 'password', 'phone']
@@ -146,9 +159,12 @@ router.patch('/users/update', auth, async (req, res) => {
 })
 
 //Deleting user End-Point.
-router.delete('/users/:id', async (req, res) => {
-    var _id = req.params.id
+router.delete('/users', async (req, res) => {
     try {
+        if (!req.query.id) {
+            throw new Error('No id provided in qs')
+        }
+        var _id = req.query.id
         const user = await User.findByIdAndDelete(_id)
         if (!user) {
             return res.status(404).send({ message: 'No user found by this ID' })
