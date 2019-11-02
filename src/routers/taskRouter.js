@@ -18,13 +18,21 @@ router.post('/tasks', auth, async (req, res) => {
         if (!list) {
             throw new Error('list is not existed')
         }
-        const createdTask = await Task.create({
+        const createdTask = new Task({
             ...req.body,
             userID: req.user._id,
             userName: req.user.userName,
             listID: list._id
         })
+        var taskDueDate = createdTask.dueDate = new Date()
+        if (req.query.dueDate === 'today') {
+            taskDueDate.setUTCHours(23,59,59,999)
+        }else if (req.query.dueDate === 'tomorrow') {
+            taskDueDate.setUTCDate(createdTask.dueDate.getUTCDate() + 1)
+            taskDueDate.setUTCHours(23,59,59,999)
+        }
         req.user.tasksNo += 1
+        await createdTask.save()
         await req.user.save()
         res.status(201).send(createdTask)
     }
@@ -148,7 +156,7 @@ router.get('/tasks/img/:id', auth, async (req, res) => {
         res.set('Content-Type', 'image/png')
         res.send(task.img)
     } catch (error) {
-        res.status(404).send(error.message)
+        res.status(404).send({error: error.message})
     }
 })
 
