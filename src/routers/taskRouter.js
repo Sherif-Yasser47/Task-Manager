@@ -24,7 +24,6 @@ router.post('/tasks', auth, async (req, res) => {
             userName: req.user.userName,
             listID: list._id
         })
-        var taskDueDate = createdTask.dueDate = new Date()
         if (req.query.dueDate === 'today') {
             taskDueDate.setUTCHours(23,59,59,999)
         }else if (req.query.dueDate === 'tomorrow') {
@@ -110,6 +109,9 @@ router.get('/tasks', auth, async (req, res) => {
         if (req.query.completed) {
             match.completed = req.query.completed === 'true'
         }
+        if (req.query.missed) {
+            match.missed = req.query.missed === 'true'
+        }
         if (req.query.sortBy) {
             var sortOrder = req.query.sortBy.split(':')[1]
             sort.createdAt = (sortOrder === 'asc') ? 1 : -1
@@ -126,6 +128,7 @@ router.get('/tasks', auth, async (req, res) => {
         if (!req.user.tasks.length) {
             return res.status(404).send({ error: 'No tasks found' })
         }
+        req.user.tasks.forEach((task) => task.findMissingStatus())
         res.send(req.user.tasks)
     } catch (error) {
         res.status(400).send({ error: error.message })
@@ -139,6 +142,7 @@ router.get('/tasks/:id', auth, async (req, res) => {
         if (!task) {
             return res.status(404).send({ error: 'No task found' })
         }
+        await task.findMissingStatus()
         res.send(task)
     } catch (error) {
         res.status(500).send({ error: error.message })

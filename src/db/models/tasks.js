@@ -24,10 +24,14 @@ const TaskSchema = new Schema({
     },
     completed: {
         type: Boolean,
-        required: true
+        default: false
     },
     dueDate: {
         type: Date
+    },
+    missed: {
+        type: Boolean,
+        default: false
     },
     userName: {
         type: String,
@@ -46,6 +50,14 @@ const TaskSchema = new Schema({
 }, {
     timestamps: true
 })
+
+TaskSchema.methods.findMissingStatus = async function () {
+    if (Date.now() > this.dueDate.getTime() && this.completed === false) {
+        this.missed = true
+    }
+    await this.save();
+    return;
+}
 
 const Task = mongoose.model('Task', TaskSchema)
 
