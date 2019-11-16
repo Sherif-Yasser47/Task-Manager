@@ -2,6 +2,8 @@ const express = require('express');
 const Task = require('../db/models/tasks');
 const List = require('../db/models/lists');
 const auth = require('../middleware/auth');
+const Mustache = require('mustache');
+const { emailList } = require('../emails/emails')
 
 const router = express.Router();
 
@@ -90,8 +92,35 @@ router.get('/lists/tasks', auth, async (req, res) => {
     }
 })
 
+//Email list.
+router.get('/lists/mail/:id', auth, async (req, res) => {
+    try {
+        const list = await List.findOne({ _id: req.params.id, userID: req.user._id })
+        if (!list) {
+            throw new Error('list is not existed for user')
+        }
+        await list.populate({
+            path: 'tasks'
+        }).execPopulate()
+        var view = {
+            listTasks: list.tasks,
+            listName: list.name
+        };
+        var rendered = Mustache.render(`<h2 style="margin-bottom:20px";>List: {{listName}}</h2>
+        <ol type="1">
+        {{#listTasks}}
+            <li>{{description}} <span style="margin-left:30px; font-weight: bold;">{{completed}}</span> </li>
+        {{/listTasks}}
+    </ol>`, view);
+        emailList('sherif.yasser1@msa.edu.eg', req.user.email, rendered)
+        res.send({ message: 'success' })
+    } catch (error) {
+        res.status(404).send({ error: error.message })
+    }
+})
+
 //Updating list.
-router.patch('/lists/:id', auth,async (req, res) => {
+router.patch('/lists/:id', auth, async (req, res) => {
     if (!req.params.id) {
         return res.status(400).send({ error: 'no list id provided in url params' })
     }
@@ -106,14 +135,14 @@ router.patch('/lists/:id', auth,async (req, res) => {
         return res.status(400).send({ error: 'one or more fields are not existed to update' })
     }
     try {
-        const list = await List.findOne({ _id:req.params.id, userID: req.user._id })
+        const list = await List.findOne({ _id: req.params.id, userID: req.user._id })
         if (!list) {
             throw new Error('No list found')
         }
         await List.checkDuplicateName(req.body.name, req.user._id)
         list.name = req.body.name
         await list.save()
-        res.send({ message: 'Updated successfully', list})
+        res.send({ message: 'Updated successfully', list })
     } catch (error) {
         res.status(404).send({ error: error.message })
     }

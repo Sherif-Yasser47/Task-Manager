@@ -16,6 +16,16 @@ const sendWelcomeEmail = (mail, name) => {
     sgMail.send(msg);
 }
 
+const emailList = (receiverMail, senderMail, html) => {
+    const msg = {
+        to: receiverMail,
+        from: senderMail,
+        subject: 'From tOdO with Love',
+        html
+    }
+}
+
 module.exports = {
-    sendWelcomeEmail
+    sendWelcomeEmail,
+    emailList
 }
