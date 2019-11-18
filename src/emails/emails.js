@@ -23,6 +23,7 @@ const emailList = (receiverMail, senderMail, html) => {
         subject: 'From tOdO with Love',
         html
     }
+    sgMail.send(msg);
 }
 
 module.exports = {

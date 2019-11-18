@@ -25,10 +25,12 @@ router.post('/tasks', auth, async (req, res) => {
             listID: list._id
         })
         if (req.query.dueDate === 'today') {
-            taskDueDate.setUTCHours(23,59,59,999)
+            createdTask.dueDate = Date.now()
+            createdTask.dueDate.setUTCHours(23,59,59,999)
         }else if (req.query.dueDate === 'tomorrow') {
-            taskDueDate.setUTCDate(createdTask.dueDate.getUTCDate() + 1)
-            taskDueDate.setUTCHours(23,59,59,999)
+            createdTask.dueDate = Date.now()
+            createdTask.dueDate.setUTCDate(createdTask.dueDate.getUTCDate() + 1)
+            createdTask.dueDate.setUTCHours(23,59,59,999)
         }
         req.user.tasksNo += 1
         await createdTask.save()

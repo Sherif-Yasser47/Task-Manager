@@ -93,7 +93,10 @@ router.get('/lists/tasks', auth, async (req, res) => {
 })
 
 //Email list.
-router.get('/lists/mail/:id', auth, async (req, res) => {
+router.post('/lists/mail/:id', auth, async (req, res) => {
+    if (!req.body.recMail) {
+        return res.status(400).send({ error: "reciever mail must be sent" })
+    }
     try {
         const list = await List.findOne({ _id: req.params.id, userID: req.user._id })
         if (!list) {
@@ -112,7 +115,7 @@ router.get('/lists/mail/:id', auth, async (req, res) => {
             <li>{{description}} <span style="margin-left:30px; font-weight: bold;">{{completed}}</span> </li>
         {{/listTasks}}
     </ol>`, view);
-        emailList('sherif.yasser1@msa.edu.eg', req.user.email, rendered)
+        emailList(req.body.recMail, req.user.email, rendered)
         res.send({ message: 'success' })
     } catch (error) {
         res.status(404).send({ error: error.message })
